@@ -153,12 +153,23 @@ export function AssetTree({ companyId }: { companyId: string }) {
 
         <div className="text-center py-12 text-gray-500">
           {search || filterEnergySensors || filterCriticalStatus ? (
-            <>
+            <div className="text-center py-12 text-gray-500">
               <p className="text-lg mb-2">No results found</p>
-              <p className="text-sm">
+              <p className="text-sm mb-4">
                 Try using different filters or search terms
               </p>
-            </>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setFilterEnergySensors(false);
+                  setFilterCriticalStatus(false);
+                }}
+                className="text-blue-600 hover:underline text-sm"
+              >
+                Clear filters
+              </button>
+            </div>
           ) : (
             <p className="text-lg">No items available</p>
           )}
@@ -190,16 +201,16 @@ export function AssetTree({ companyId }: { companyId: string }) {
           )}
           {search && (
             <button
-            onClick={() => setSearch("")}
-            className="absolute right-2.5 top-3.5 text-gray-400 hover:text-gray-600 w-[16px] h-[16px]"
-          >
-            <img
-              src={CloseIcon}
-              alt="Close Icon"
-              className="absolute right-0 top-0 text-gray-400 w-[16px] h-[16px]"
-              aria-hidden="true"
-            />
-          </button>
+              onClick={() => setSearch("")}
+              className="absolute right-2.5 top-3.5 text-gray-400 hover:text-gray-600 w-[16px] h-[16px]"
+            >
+              <img
+                src={CloseIcon}
+                alt="Close Icon"
+                className="absolute right-0 top-0 text-gray-400 w-[16px] h-[16px]"
+                aria-hidden="true"
+              />
+            </button>
           )}
         </div>
 

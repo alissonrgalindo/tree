@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { TreeNode } from "@/types";
 import { StatusIndicator } from "./StatusIndicator";
 
@@ -18,45 +18,17 @@ interface TreeItemProps {
   level?: number;
 }
 
-export function TreeItem({ node, selectedId, onSelect, level = 0 }: TreeItemProps) {
+export function TreeItem({
+  node,
+  selectedId,
+  onSelect,
+  level = 0,
+}: TreeItemProps) {
   const [expanded, setExpanded] = useState(level < 2);
-  
+
   const hasChildren = node.children.length > 0;
   const isSelected = selectedId === node.id;
   const isLeaf = !hasChildren;
-
-  const { hasSelectedDescendant, selectedDescendantIndex } = useMemo(() => {
-    const hasSelected = node.children.some(
-      (child) => child.id === selectedId || hasAnySelected(child, selectedId)
-    );
-    
-    const index = hasSelected 
-      ? node.children.findIndex(
-          (child) => child.id === selectedId || hasAnySelected(child, selectedId)
-        )
-      : -1;
-    
-    return { hasSelectedDescendant: hasSelected, selectedDescendantIndex: index };
-  }, [node.children, selectedId]);
-
-  const verticalLineConfig = useMemo(() => {
-    const shouldShowForLocation = node.type === "location" && hasChildren && expanded;
-    
-    const shouldShowForAsset = node.type === "asset" && hasSelectedDescendant;
-    
-    const shouldShow = shouldShowForLocation || shouldShowForAsset;
-    
-    let height = 0;
-    if (node.type === "asset" && hasSelectedDescendant && selectedDescendantIndex !== -1) {
-      height = 22 * (selectedDescendantIndex + 1);
-    }
-    
-    return {
-      shouldShow,
-      height: height || undefined,
-      bottom: node.type === "location" ? 0 : undefined
-    };
-  }, [node.type, expanded, hasChildren, hasSelectedDescendant, selectedDescendantIndex]);
 
   const handleItemClick = useCallback(() => {
     if (isLeaf) {
@@ -69,43 +41,40 @@ export function TreeItem({ node, selectedId, onSelect, level = 0 }: TreeItemProp
     }
   }, [isLeaf, onSelect, node.id, expanded]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      handleItemClick();
-    } else if (e.key === "ArrowRight" && hasChildren && !expanded) {
-      e.preventDefault();
-      setExpanded(true);
-    } else if (e.key === "ArrowLeft" && hasChildren && expanded) {
-      e.preventDefault();
-      setExpanded(false);
-    }
-  }, [handleItemClick, hasChildren, expanded]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleItemClick();
+      } else if (e.key === "ArrowRight" && hasChildren && !expanded) {
+        e.preventDefault();
+        setExpanded(true);
+      } else if (e.key === "ArrowLeft" && hasChildren && expanded) {
+        e.preventDefault();
+        setExpanded(false);
+      }
+    },
+    [handleItemClick, hasChildren, expanded]
+  );
+
+  const marginLeft = level * 8;
+  const groupId = `tree-group-${node.id}`;
 
   return (
-    <li 
-      className="relative pl-1" 
-      role="treeitem" 
+    <li
+      className="relative"
+      role="treeitem"
       aria-expanded={hasChildren ? expanded : undefined}
+      aria-controls={hasChildren ? groupId : undefined}
       data-id={node.id}
     >
-      {verticalLineConfig.shouldShow && (
-        <div
-          className="absolute left-[17px] top-6 w-px bg-gray-200"
-          style={{
-            height: verticalLineConfig.height,
-            bottom: verticalLineConfig.bottom,
-          }}
-        />
-      )}
-
-      {node.type === "component" && isSelected && node.parentType === "asset" && (
-        <div className="absolute left-[-2px] top-1/2 w-[26px] h-px bg-gray-200" />
-      )}
-
       <div
-        className={`flex items-center gap-2 py-1 px-2 pr-2 rounded cursor-pointer ${
-          isSelected ? "bg-blue-500 text-white" : "hover:bg-gray-100"} ${level > 1 && "ml-5"}`}
+        style={{ marginLeft }}
+        className={`flex items-center gap-2 py-1 px-2 pr-2 rounded cursor-pointer transition-colors duration-200 ${
+          isSelected
+            ? "bg-blue-500 text-white hover:bg-blue-600"
+            : "hover:bg-gray-100"
+        } focus:outline-none focus:ring-2 focus:ring-blue-400`}
         onClick={handleItemClick}
         onKeyDown={handleKeyDown}
         tabIndex={0}
@@ -119,31 +88,41 @@ export function TreeItem({ node, selectedId, onSelect, level = 0 }: TreeItemProp
             <img
               src={ChevronDownIcon}
               alt={expanded ? "Collapse" : "Expand"}
-              className={`w-3 h-3 transition-transform ${expanded ? "rotate-0" : "-rotate-90"}`}
+              className={`w-3 h-3 transition-transform duration-300 ${
+                expanded ? "rotate-0" : "-rotate-90"
+              } ${isSelected ? "filter brightness-0 invert" : ""}`}
               aria-hidden="true"
             />
           </div>
         )}
         {!hasChildren && level === 1 && <div className="w-3" />}
 
+        {node.type === "location" && level === 0 && (
+          <div className="absolute top-[28px] left-[14px] h-[calc(100%-28px)] w-px bg-gray-200"></div>
+        )}
+
         <img
           src={getIcon(node.type)}
           alt={node.type}
-          className={`w-[22px] h-[22px] ${isSelected ? "filter brightness-0 invert" : ""}`}
+          className={`w-[22px] h-[22px] ${
+            isSelected ? "filter brightness-0 invert" : ""
+          }`}
           aria-hidden="true"
         />
 
         <span className="text-sm truncate">{node.name}</span>
-        
-        <div className="flex-grow"></div>
-        
+
         <div className={`${isSelected ? "text-white" : ""}`}>
           <StatusIndicator status={node.status} sensorType={node.sensorType} />
         </div>
       </div>
 
       {expanded && hasChildren && (
-        <ul className="pl-4 flex flex-col gap-1" role="group">
+        <ul
+          id={groupId}
+          className="pl-4 flex flex-col gap-1 transition-all duration-200 ease-in-out"
+          role="group"
+        >
           {sortTreeNodes(node.children).map((child) => (
             <TreeItem
               key={child.id}
@@ -161,10 +140,14 @@ export function TreeItem({ node, selectedId, onSelect, level = 0 }: TreeItemProp
 
 function getIcon(type: TreeNode["type"]) {
   switch (type) {
-    case "location": return LocationIcon;
-    case "asset": return CubeIcon;
-    case "component": return CodepenIcon;
-    default: return "";
+    case "location":
+      return LocationIcon;
+    case "asset":
+      return CubeIcon;
+    case "component":
+      return CodepenIcon;
+    default:
+      return "";
   }
 }
 
@@ -173,9 +156,4 @@ function sortTreeNodes(nodes: TreeNode[]) {
     const order = { location: 0, asset: 1, component: 2 };
     return order[a.type] - order[b.type];
   });
-}
-
-function hasAnySelected(node: TreeNode, selectedId: string | null): boolean {
-  if (node.id === selectedId) return true;
-  return node.children.some((child) => hasAnySelected(child, selectedId));
 }

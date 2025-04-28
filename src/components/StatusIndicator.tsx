@@ -1,7 +1,6 @@
 import React from "react";
 import PowerIcon from "@/assets/icons/power.svg";
 
-
 interface StatusIndicatorProps {
   status?: "operating" | "alert" | "warning" | string | null;
   sensorType?: "energy" | "vibration" | string | null;
@@ -21,11 +20,11 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
     if (sensorType === "energy") {
       return (
         <img
-              src={PowerIcon}
-              alt="Power Icon"
-              className="w-[9px]"
-              aria-hidden="true"
-            />
+          src={PowerIcon}
+          alt="Power Icon"
+          className="w-[9px]"
+          aria-hidden="true"
+        />
       );
     }
 

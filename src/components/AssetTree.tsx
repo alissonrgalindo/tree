@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useAssets, useLocations } from "@/hooks/useAssetsAndLocations";
 import { buildTree } from "@/utils/buildTree";
-import { filterTree } from "@/utils/filterTree";
+import { filterTree, filterTreeWithCriteria } from "@/utils/filterTree";
 import { TreeItem, ExtendedTreeNode } from "./TreeItem";
+import { TreeFilters } from "./TreeFilters";
 
 export function AssetTree({ companyId }: { companyId: string }) {
   const { data: locations, isLoading: loadingLocations } = useLocations(companyId);
@@ -11,6 +12,8 @@ export function AssetTree({ companyId }: { companyId: string }) {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [debouncedSearch, setDebouncedSearch] = useState(search);
+  const [filterEnergySensors, setFilterEnergySensors] = useState(false);
+  const [filterCriticalStatus, setFilterCriticalStatus] = useState(false);
   const treeContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -26,8 +29,28 @@ export function AssetTree({ companyId }: { companyId: string }) {
   }, [locations, assets]);
 
   const filteredTree = useMemo(() => {
-    return filterTree(tree, debouncedSearch) as ExtendedTreeNode[];
-  }, [tree, debouncedSearch]);
+  
+    let result = filterTree(tree, debouncedSearch) as ExtendedTreeNode[];
+    
+  
+    if (filterEnergySensors || filterCriticalStatus) {
+      result = filterTreeWithCriteria(result, {
+        energySensors: filterEnergySensors,
+        criticalStatus: filterCriticalStatus
+      });
+    }
+    
+    return result;
+  }, [tree, debouncedSearch, filterEnergySensors, filterCriticalStatus]);
+
+
+  const handleFilterEnergySensors = useCallback(() => {
+    setFilterEnergySensors(prev => !prev);
+  }, []);
+
+  const handleFilterCriticalStatus = useCallback(() => {
+    setFilterCriticalStatus(prev => !prev);
+  }, []);
 
   useEffect(() => {
     if (selectedId && treeContainerRef.current) {
@@ -63,7 +86,7 @@ export function AssetTree({ companyId }: { companyId: string }) {
       <div className="flex items-center justify-center w-full h-64">
         <div className="text-gray-500 flex flex-col items-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-2"></div>
-          <span>Carregando árvore...</span>
+          <span>Loading tree...</span>
         </div>
       </div>
     );
@@ -78,7 +101,7 @@ export function AssetTree({ companyId }: { companyId: string }) {
             value={search}
             onChange={handleSearchChange}
             onKeyDown={handleSearchKeyDown}
-            placeholder="Buscar Ativo ou Local"
+            placeholder="Search Asset or Location"
             className="w-full px-3 py-2 pl-8 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <svg 
@@ -117,14 +140,23 @@ export function AssetTree({ companyId }: { companyId: string }) {
           )}
         </div>
         
+        <div className="mb-4">
+          <TreeFilters 
+            onFilterEnergySensors={handleFilterEnergySensors}
+            onFilterCriticalStatus={handleFilterCriticalStatus}
+            isEnergySensorsActive={filterEnergySensors}
+            isCriticalStatusActive={filterCriticalStatus}
+          />
+        </div>
+        
         <div className="text-center py-12 text-gray-500">
-          {search ? (
+          {(search || filterEnergySensors || filterCriticalStatus) ? (
             <>
-              <p className="text-lg mb-2">Nenhum resultado encontrado</p>
-              <p className="text-sm">Tente usar termos diferentes na busca</p>
+              <p className="text-lg mb-2">No results found</p>
+              <p className="text-sm">Try using different filters or search terms</p>
             </>
           ) : (
-            <p className="text-lg">Nenhum item disponível</p>
+            <p className="text-lg">No items available</p>
           )}
         </div>
       </div>
@@ -134,7 +166,7 @@ export function AssetTree({ companyId }: { companyId: string }) {
   return (
     <div className="w-[479px] h-full border-r bg-white flex flex-col border-gray-200">
       <div className="px-4 py-4 border border-gray-200 border-r-0">
-        <div className="relative">
+        <div className="relative mb-4">
           <input
             type="text"
             value={search}
@@ -142,7 +174,7 @@ export function AssetTree({ companyId }: { companyId: string }) {
             onKeyDown={handleSearchKeyDown}
             placeholder="Buscar Ativo ou Local"
             className="w-full px-3 py-2 pl-8 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            aria-label="Buscar na árvore de ativos"
+            aria-label="Search asset tree"
           />
           <svg 
             className="absolute left-2.5 top-2.5 text-gray-400" 
@@ -163,7 +195,7 @@ export function AssetTree({ companyId }: { companyId: string }) {
             <button
               onClick={() => setSearch("")}
               className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600"
-              aria-label="Limpar busca"
+              aria-label="Clear search"
             >
               <svg 
                 width="16" 
@@ -182,18 +214,27 @@ export function AssetTree({ companyId }: { companyId: string }) {
             </button>
           )}
         </div>
+        
+        <div>
+          <TreeFilters 
+            onFilterEnergySensors={handleFilterEnergySensors}
+            onFilterCriticalStatus={handleFilterCriticalStatus}
+            isEnergySensorsActive={filterEnergySensors}
+            isCriticalStatusActive={filterCriticalStatus}
+          />
+        </div>
       </div>
 
       <div 
         ref={treeContainerRef}
         className="flex-grow overflow-y-auto p-4 pb-16 border border-gray-200 border-t-0 border-r-0"
         style={{ 
-          maxHeight: 'calc(100vh - 80px)',
+          maxHeight: 'calc(100vh - 140px)',
           scrollbarWidth: 'thin',
           scrollbarColor: '#CBD5E0 #F7FAFC'
         }}
       >
-        <ul className="space-y-1" role="tree" aria-label="Árvore de ativos e locais">
+        <ul className="space-y-1" role="tree" aria-label="Asset and location tree">
           {filteredTree.map((node) => (
             <TreeItem
               key={node.id}

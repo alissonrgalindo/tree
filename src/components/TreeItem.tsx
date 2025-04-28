@@ -118,7 +118,7 @@ export function TreeItem({ node, selectedId, onSelect, level = 0 }: TreeItemProp
           <div className="flex items-center justify-center w-3 h-3">
             <img
               src={ChevronDownIcon}
-              alt={expanded ? "Recolher" : "Expandir"}
+              alt={expanded ? "Collapse" : "Expand"}
               className={`w-3 h-3 transition-transform ${expanded ? "rotate-0" : "-rotate-90"}`}
               aria-hidden="true"
             />

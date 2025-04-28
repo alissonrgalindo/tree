@@ -20,7 +20,7 @@ export function Header({ selectedCompanyId, onSelectCompany }: HeaderProps) {
             onClick={() => onSelectCompany(company.id)}
             className={`px-3 py-1 rounded ${selectedCompanyId === company.id ? 'bg-blue-900' : 'bg-blue-600'}`}
           >
-            {company.name}
+            {company.name} Unit
           </button>
         ))}
       </div>

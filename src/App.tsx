@@ -13,7 +13,7 @@ function App() {
         {companyId ? (
           <AssetTree companyId={companyId} />
         ) : (
-          <div className="m-auto text-gray-500">Selecione uma unidade</div>
+          <div className="m-auto text-gray-500">Select a unit</div>
         )}
       </main>
     </div>

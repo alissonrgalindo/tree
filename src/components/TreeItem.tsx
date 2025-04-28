@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, memo } from "react";
 import { TreeNode } from "@/types";
 import { StatusIndicator } from "./StatusIndicator";
 
@@ -18,7 +18,33 @@ interface TreeItemProps {
   level?: number;
 }
 
-export function TreeItem({
+const TreeItemIcon = memo(({ type, isSelected }: { type: TreeNode["type"], isSelected: boolean }) => (
+  <img
+    src={getIcon(type)}
+    alt={type}
+    className={`w-[22px] h-[22px] ${isSelected ? "filter brightness-0 invert" : ""}`}
+    aria-hidden="true"
+  />
+));
+
+const ChevronIcon = memo(({ expanded, isSelected }: { expanded: boolean, isSelected: boolean }) => (
+  <div className="flex items-center justify-center w-3 h-3">
+    <img
+      src={ChevronDownIcon}
+      alt={expanded ? "Collapse" : "Expand"}
+      className={`w-3 h-3 transition-transform duration-300 ${
+        expanded ? "rotate-0" : "-rotate-90"
+      } ${isSelected ? "filter brightness-0 invert" : ""}`}
+      aria-hidden="true"
+    />
+  </div>
+));
+
+const VerticalLine = memo(() => (
+  <div className="absolute top-[28px] left-[14px] h-[calc(100%-28px)] w-px bg-gray-200"></div>
+));
+
+export const TreeItem = memo(function TreeItem({
   node,
   selectedId,
   onSelect,
@@ -29,6 +55,9 @@ export function TreeItem({
   const hasChildren = node.children.length > 0;
   const isSelected = selectedId === node.id;
   const isLeaf = !hasChildren;
+  const isLocation = node.type === "location";
+  const isFirstLevel = level === 0;
+  const isSecondLevel = level === 1;
 
   const handleItemClick = useCallback(() => {
     if (isLeaf) {
@@ -59,6 +88,15 @@ export function TreeItem({
 
   const marginLeft = level * 8;
   const groupId = `tree-group-${node.id}`;
+  
+  const itemClasses = `
+    flex items-center gap-2 py-1 px-2 pr-2 rounded cursor-pointer 
+    transition-colors duration-200
+    ${isSelected
+      ? "bg-blue-500 text-white hover:bg-blue-600"
+      : "hover:bg-gray-100"
+    } focus:outline-none focus:ring-2 focus:ring-blue-400
+  `;
 
   return (
     <li
@@ -70,11 +108,7 @@ export function TreeItem({
     >
       <div
         style={{ marginLeft }}
-        className={`flex items-center gap-2 py-1 px-2 pr-2 rounded cursor-pointer transition-colors duration-200 ${
-          isSelected
-            ? "bg-blue-500 text-white hover:bg-blue-600"
-            : "hover:bg-gray-100"
-        } focus:outline-none focus:ring-2 focus:ring-blue-400`}
+        className={itemClasses}
         onClick={handleItemClick}
         onKeyDown={handleKeyDown}
         tabIndex={0}
@@ -83,32 +117,12 @@ export function TreeItem({
         aria-level={level + 1}
         aria-label={`${node.name}, ${node.type}`}
       >
-        {hasChildren && (
-          <div className="flex items-center justify-center w-3 h-3">
-            <img
-              src={ChevronDownIcon}
-              alt={expanded ? "Collapse" : "Expand"}
-              className={`w-3 h-3 transition-transform duration-300 ${
-                expanded ? "rotate-0" : "-rotate-90"
-              } ${isSelected ? "filter brightness-0 invert" : ""}`}
-              aria-hidden="true"
-            />
-          </div>
-        )}
-        {!hasChildren && level === 1 && <div className="w-3" />}
+        {hasChildren && <ChevronIcon expanded={expanded} isSelected={isSelected} />}
+        {!hasChildren && isSecondLevel && <div className="w-3" />}
 
-        {node.type === "location" && level === 0 && (
-          <div className="absolute top-[28px] left-[14px] h-[calc(100%-28px)] w-px bg-gray-200"></div>
-        )}
+        {isLocation && isFirstLevel && <VerticalLine />}
 
-        <img
-          src={getIcon(node.type)}
-          alt={node.type}
-          className={`w-[22px] h-[22px] ${
-            isSelected ? "filter brightness-0 invert" : ""
-          }`}
-          aria-hidden="true"
-        />
+        <TreeItemIcon type={node.type} isSelected={isSelected} />
 
         <span className="text-sm truncate">{node.name}</span>
 
@@ -120,7 +134,7 @@ export function TreeItem({
       {expanded && hasChildren && (
         <ul
           id={groupId}
-          className="pl-4 flex flex-col gap-1 transition-all duration-200 ease-in-out"
+          className="pl-4 flex flex-col gap-1 transition-all duration-200 ease-in-out mt-1"
           role="group"
         >
           {sortTreeNodes(node.children).map((child) => (
@@ -136,7 +150,7 @@ export function TreeItem({
       )}
     </li>
   );
-}
+});
 
 function getIcon(type: TreeNode["type"]) {
   switch (type) {

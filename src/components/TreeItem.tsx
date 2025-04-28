@@ -4,8 +4,8 @@ import { StatusIndicator } from "./StatusIndicator";
 
 import ChevronDownIcon from "@/assets/icons/chevron-down.svg";
 import LocationIcon from "@/assets/icons/location.svg";
-import CubeIcon from "@/assets/icons/Cube.svg";
-import CodepenIcon from "@/assets/icons/Codepen.svg";
+import CubeIcon from "@/assets/icons/cube.svg";
+import CodepenIcon from "@/assets/icons/codepen.svg";
 
 export interface ExtendedTreeNode extends TreeNode {
   parentType?: TreeNode["type"];
